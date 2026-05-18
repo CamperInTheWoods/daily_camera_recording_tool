@@ -48,10 +48,14 @@ Windows 시작 프로그램에 등록됩니다. 로그인 후 백그라운드에
 
 ---
 
-## 수동 실행
+## 명령어 목록
 
-```bash
-python recorder.py
-```
+| 명령어 | 설명 |
+|--------|------|
+| `python recorder.py` | 스케줄러 실행 |
+| `python list_cameras.py` | 연결된 카메라 목록 확인 |
+| `register_startup.bat` | 컴퓨터 시작 시 자동 실행 등록 (재부팅 후 적용) |
+| `tasklist \| findstr pythonw` | 백그라운드에서 돌고 있는지 확인 |
+| `taskkill /f /im pythonw.exe` | 백그라운드 프로세스 종료 |
 
-종료: `Ctrl+C`
+스케줄러 수동 실행 종료: `Ctrl+C`
