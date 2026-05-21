@@ -45,6 +45,8 @@ def parse_args():
     args = sys.argv[1:]
     result = {}
 
+    if "--list" in args:
+        result["show_list"] = True
     if "--config" in args:
         result["show_config"] = True
     if "--preview" in args:
@@ -205,6 +207,28 @@ def main():
     if changed:
         save_config(config)
         print("설정 저장됨")
+
+    if args.get("show_list"):
+        print("""
+[ 명령어 목록 ]
+
+  python recorder.py                        스케줄러 실행 (터미널 유지)
+  pythonw recorder.py                       백그라운드 실행
+  python recorder.py --preview              카메라 프리뷰 (R: 녹화, S: 중단, Q: 종료)
+  python recorder.py --config               현재 설정 확인
+  python recorder.py --list                 명령어 목록 보기
+
+  python recorder.py --camera 1             카메라 번호 변경
+  python recorder.py --time 0900 1800       촬영 시각 변경
+  python recorder.py --duration 60          촬영 길이(초) 변경
+
+  python list_cameras.py                    연결된 카메라 목록 확인
+  register_startup.bat                      자동 시작 등록 (재부팅 후 적용)
+  tasklist | findstr pythonw                실행 중인지 확인
+  taskkill /f /im pythonw.exe               백그라운드 종료
+  git pull                                  최신 버전 업데이트
+""")
+        return
 
     if args.get("show_config"):
         print("[ 현재 설정 ]")
