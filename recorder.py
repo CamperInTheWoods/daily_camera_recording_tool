@@ -23,9 +23,17 @@ from pathlib import Path
 CONFIG_PATH = Path(__file__).parent / "config.json"
 
 
+def normalize_time(t: str) -> str:
+    if ":" not in t and len(t) == 4:
+        return f"{t[:2]}:{t[2:]}"
+    return t
+
+
 def load_config():
     with open(CONFIG_PATH, encoding="utf-8") as f:
-        return json.load(f)
+        config = json.load(f)
+    config["schedule_times"] = [normalize_time(t) for t in config["schedule_times"]]
+    return config
 
 
 def save_config(config: dict):
@@ -53,6 +61,8 @@ def parse_args():
         for v in args[i + 1:]:
             if v.startswith("--"):
                 break
+            if ":" not in v and len(v) == 4:
+                v = f"{v[:2]}:{v[2:]}"
             times.append(v)
         result["schedule_times"] = times
 
