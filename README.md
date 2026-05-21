@@ -45,5 +45,7 @@
   tasklist | findstr pythonw          백그라운드 실행 중인지 확인
   taskkill /f /im pythonw.exe         백그라운드 프로세스 종료
   git pull                            최신 버전으로 업데이트
+  git pull && python recorder.py     업데이트 후 바로 실행
+  git pull && pythonw recorder.py    업데이트 후 바로 백그라운드 실행
 
   수동 실행 종료: Ctrl+C
