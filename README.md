@@ -35,6 +35,7 @@
 [ 명령어 목록 ]
 
   python recorder.py                  스케줄러 실행 (수동)
+  python recorder.py --preview        카메라 프리뷰 창 띄우기 (R: 녹화, S: 중단, Q: 종료)
   python list_cameras.py              연결된 카메라 목록 확인
   register_startup.bat                자동 시작 등록 (재부팅 후 적용)
   tasklist | findstr pythonw          백그라운드 실행 중인지 확인
