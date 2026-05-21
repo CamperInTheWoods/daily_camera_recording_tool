@@ -36,6 +36,10 @@
 
   python recorder.py                  스케줄러 실행 (수동)
   python recorder.py --preview        카메라 프리뷰 창 띄우기 (R: 녹화, S: 중단, Q: 종료)
+  python recorder.py --config         현재 설정 확인
+  python recorder.py --camera 1       카메라 번호 변경 후 저장
+  python recorder.py --time 09:00 18:00   촬영 시각 변경 후 저장
+  python recorder.py --duration 120   촬영 길이(초) 변경 후 저장
   python list_cameras.py              연결된 카메라 목록 확인
   register_startup.bat                자동 시작 등록 (재부팅 후 적용)
   tasklist | findstr pythonw          백그라운드 실행 중인지 확인

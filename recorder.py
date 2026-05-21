@@ -3,8 +3,12 @@
 config.json에 설정된 시각에 지정 카메라로 동영상을 촬영하여 저장합니다.
 
 사용법:
-  python recorder.py            -- 스케줄 모드 (백그라운드)
-  python recorder.py --preview  -- 프리뷰 창 + 수동 녹화 (R: 시작, S: 중단, Q: 종료)
+  python recorder.py                        -- 스케줄 모드
+  python recorder.py --preview              -- 프리뷰 창 (R: 녹화, S: 중단, Q: 종료)
+  python recorder.py --config               -- 현재 설정 확인
+  python recorder.py --camera 1             -- 카메라 번호 변경
+  python recorder.py --time 09:00 18:00     -- 촬영 시각 변경
+  python recorder.py --duration 120         -- 촬영 길이(초) 변경
 """
 
 import sys
@@ -16,11 +20,43 @@ import cv2
 from datetime import datetime
 from pathlib import Path
 
+CONFIG_PATH = Path(__file__).parent / "config.json"
+
 
 def load_config():
-    config_path = Path(__file__).parent / "config.json"
-    with open(config_path, encoding="utf-8") as f:
+    with open(CONFIG_PATH, encoding="utf-8") as f:
         return json.load(f)
+
+
+def save_config(config: dict):
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(config, f, ensure_ascii=False, indent=4)
+
+
+def parse_args():
+    args = sys.argv[1:]
+    result = {}
+
+    if "--config" in args:
+        result["show_config"] = True
+    if "--preview" in args:
+        result["preview"] = True
+    if "--camera" in args:
+        i = args.index("--camera")
+        result["camera_index"] = int(args[i + 1])
+    if "--duration" in args:
+        i = args.index("--duration")
+        result["duration_seconds"] = int(args[i + 1])
+    if "--time" in args:
+        i = args.index("--time")
+        times = []
+        for v in args[i + 1:]:
+            if v.startswith("--"):
+                break
+            times.append(v)
+        result["schedule_times"] = times
+
+    return result
 
 
 def next_sequence_number(save_folder: Path) -> int:
@@ -147,7 +183,27 @@ def schedule_mode(camera_index: int, save_folder: Path, duration: int, schedule_
 
 
 def main():
+    args   = parse_args()
     config = load_config()
+
+    # 인자로 넘어온 값은 config에 덮어쓰고 저장
+    changed = False
+    for key in ("camera_index", "duration_seconds", "schedule_times"):
+        if key in args:
+            config[key] = args[key]
+            changed = True
+    if changed:
+        save_config(config)
+        print("설정 저장됨")
+
+    if args.get("show_config"):
+        print("[ 현재 설정 ]")
+        print(f"  camera_index     : {config['camera_index']}")
+        print(f"  save_folder      : {config['save_folder']}")
+        print(f"  duration_seconds : {config['duration_seconds']}초")
+        print(f"  schedule_times   : {', '.join(config['schedule_times'])}")
+        return
+
     camera_index   = config["camera_index"]
     save_folder    = Path(config["save_folder"])
     duration       = config["duration_seconds"]
@@ -155,7 +211,7 @@ def main():
 
     save_folder.mkdir(parents=True, exist_ok=True)
 
-    if "--preview" in sys.argv:
+    if args.get("preview"):
         preview_mode(camera_index, save_folder)
     else:
         schedule_mode(camera_index, save_folder, duration, schedule_times)
