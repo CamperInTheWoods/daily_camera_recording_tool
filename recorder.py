@@ -138,9 +138,10 @@ def preview_mode(camera_index: int, save_folder: Path):
             if motion and not recording:
                 writer, filepath = make_writer(save_folder, cap)
                 recording = True
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] 움직임 감지 → 녹화 시작")
             elif not motion and recording:
                 writer.release()
-                print(f"[자동 중단] 저장: {filepath}")
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] 움직임 없음 → 녹화 중단: {filepath}")
                 writer = None
                 recording = False
 
