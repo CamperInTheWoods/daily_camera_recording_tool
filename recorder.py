@@ -111,13 +111,13 @@ def preview_mode(camera_index: int, save_folder: Path):
         print(f"[오류] 카메라 {camera_index}번을 열 수 없습니다.")
         return
 
-    writer   = None
-    filepath = None
-    recording = False
-    prev_gray = None
+    writer        = None
+    filepath      = None
+    recording     = False
+    prev_gray     = None
+    motion_mode   = True  # 움직임 자동 녹화 기본 켜짐
 
-    print("프리뷰 실행 중 | R: 수동 녹화  S: 수동 중단  Q: 종료")
-    print("움직임 감지 시 자동 녹화 / 움직임 없으면 자동 중단")
+    print("프리뷰 실행 중 | R: 수동 녹화  S: 수동 중단  M: 움직임 감지 토글  Q: 종료")
 
     while True:
         ret, frame = cap.read()
@@ -133,15 +133,16 @@ def preview_mode(camera_index: int, save_folder: Path):
             motion = detect_motion(prev_gray, curr_gray)
         prev_gray = curr_gray
 
-        # 움직임에 따른 자동 녹화 제어
-        if motion and not recording:
-            writer, filepath = make_writer(save_folder, cap)
-            recording = True
-        elif not motion and recording:
-            writer.release()
-            print(f"[자동 중단] 저장: {filepath}")
-            writer = None
-            recording = False
+        # 움직임에 따른 자동 녹화 제어 (motion_mode 켜진 경우만)
+        if motion_mode:
+            if motion and not recording:
+                writer, filepath = make_writer(save_folder, cap)
+                recording = True
+            elif not motion and recording:
+                writer.release()
+                print(f"[자동 중단] 저장: {filepath}")
+                writer = None
+                recording = False
 
         if recording and writer:
             writer.write(frame)
@@ -151,6 +152,11 @@ def preview_mode(camera_index: int, save_folder: Path):
         # 우상단 빨간 원 (움직임 감지 시)
         if motion:
             cv2.circle(frame, (w - 30, 30), 15, (0, 0, 255), -1)
+
+        # 우상단 움직임 감지 모드 상태 표시
+        mode_color = (0, 255, 0) if motion_mode else (100, 100, 100)
+        cv2.putText(frame, f"M: {'ON' if motion_mode else 'OFF'}", (w - 80, 70),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, mode_color, 2)
 
         # REC 표시
         if recording:
@@ -170,6 +176,9 @@ def preview_mode(camera_index: int, save_folder: Path):
                 print(f"[녹화 중단] 저장: {filepath}")
                 writer = None
                 recording = False
+        elif key == ord('m') or key == ord('M'):
+            motion_mode = not motion_mode
+            print(f"[움직임 감지] {'켜짐' if motion_mode else '꺼짐'}")
         elif key == ord('q') or key == ord('Q'):
             break
         elif cv2.getWindowProperty("Camera Preview", cv2.WND_PROP_VISIBLE) < 1:
