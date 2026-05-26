@@ -97,17 +97,27 @@ def make_writer(save_folder: Path, cap: cv2.VideoCapture):
     return writer, filepath
 
 
+def detect_motion(prev_gray, curr_gray, threshold=25, min_area=500):
+    diff = cv2.absdiff(prev_gray, curr_gray)
+    _, mask = cv2.threshold(diff, threshold, 255, cv2.THRESH_BINARY)
+    mask = cv2.dilate(mask, None, iterations=2)
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    return any(cv2.contourArea(c) > min_area for c in contours)
+
+
 def preview_mode(camera_index: int, save_folder: Path):
     cap = cv2.VideoCapture(camera_index)
     if not cap.isOpened():
         print(f"[오류] 카메라 {camera_index}번을 열 수 없습니다.")
         return
 
-    writer = None
+    writer   = None
     filepath = None
     recording = False
+    prev_gray = None
 
-    print("프리뷰 실행 중 | R: 녹화 시작  S: 녹화 중단  Q: 종료")
+    print("프리뷰 실행 중 | R: 수동 녹화  S: 수동 중단  Q: 종료")
+    print("움직임 감지 시 자동 녹화 / 움직임 없으면 자동 중단")
 
     while True:
         ret, frame = cap.read()
@@ -115,8 +125,35 @@ def preview_mode(camera_index: int, save_folder: Path):
             print("[경고] 프레임을 읽지 못했습니다.")
             break
 
+        curr_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        curr_gray = cv2.GaussianBlur(curr_gray, (21, 21), 0)
+
+        motion = False
+        if prev_gray is not None:
+            motion = detect_motion(prev_gray, curr_gray)
+        prev_gray = curr_gray
+
+        # 움직임에 따른 자동 녹화 제어
+        if motion and not recording:
+            writer, filepath = make_writer(save_folder, cap)
+            recording = True
+        elif not motion and recording:
+            writer.release()
+            print(f"[자동 중단] 저장: {filepath}")
+            writer = None
+            recording = False
+
         if recording and writer:
             writer.write(frame)
+
+        h, w = frame.shape[:2]
+
+        # 우상단 빨간 원 (움직임 감지 시)
+        if motion:
+            cv2.circle(frame, (w - 30, 30), 15, (0, 0, 255), -1)
+
+        # REC 표시
+        if recording:
             cv2.putText(frame, "REC", (10, 35),
                         cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
 
