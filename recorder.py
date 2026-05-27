@@ -17,6 +17,7 @@ import time
 import threading
 import schedule
 import cv2
+import numpy as np
 from datetime import datetime
 from pathlib import Path
 
@@ -97,6 +98,18 @@ def make_writer(save_folder: Path, cap: cv2.VideoCapture):
     return writer, filepath
 
 
+def letterbox(frame, win_w, win_h):
+    fh, fw = frame.shape[:2]
+    scale = min(win_w / fw, win_h / fh)
+    new_w, new_h = int(fw * scale), int(fh * scale)
+    resized = cv2.resize(frame, (new_w, new_h))
+    canvas = np.zeros((win_h, win_w, 3), dtype=np.uint8)
+    x = (win_w - new_w) // 2
+    y = (win_h - new_h) // 2
+    canvas[y:y+new_h, x:x+new_w] = resized
+    return canvas
+
+
 def detect_motion(prev_gray, curr_gray, threshold=25, min_area=2000):
     diff = cv2.absdiff(prev_gray, curr_gray)
     _, mask = cv2.threshold(diff, threshold, 255, cv2.THRESH_BINARY)
@@ -170,7 +183,12 @@ def preview_mode(camera_index: int, save_folder: Path):
             cv2.putText(frame, "REC", (10, 35),
                         cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
 
-        cv2.imshow("Camera Preview", frame)
+        rect = cv2.getWindowImageRect("Camera Preview")
+        if rect[2] > 0 and rect[3] > 0:
+            display = letterbox(frame, rect[2], rect[3])
+        else:
+            display = frame
+        cv2.imshow("Camera Preview", display)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('r') or key == ord('R'):
