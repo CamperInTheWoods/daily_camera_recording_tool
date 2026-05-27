@@ -119,6 +119,7 @@ def preview_mode(camera_index: int, save_folder: Path):
     last_motion_time = None
     MOTION_COOLDOWN  = 5  # 마지막 움직임 후 이 초만큼 더 녹화
 
+    cv2.namedWindow("Camera Preview", cv2.WINDOW_NORMAL)
     print("프리뷰 실행 중 | R: 수동 녹화  S: 수동 중단  M: 움직임 감지 토글  Q: 종료")
 
     while True:
