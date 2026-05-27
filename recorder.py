@@ -97,7 +97,7 @@ def make_writer(save_folder: Path, cap: cv2.VideoCapture):
     return writer, filepath
 
 
-def detect_motion(prev_gray, curr_gray, threshold=25, min_area=500):
+def detect_motion(prev_gray, curr_gray, threshold=25, min_area=2000):
     diff = cv2.absdiff(prev_gray, curr_gray)
     _, mask = cv2.threshold(diff, threshold, 255, cv2.THRESH_BINARY)
     mask = cv2.dilate(mask, None, iterations=2)
@@ -111,11 +111,13 @@ def preview_mode(camera_index: int, save_folder: Path):
         print(f"[오류] 카메라 {camera_index}번을 열 수 없습니다.")
         return
 
-    writer        = None
-    filepath      = None
-    recording     = False
-    prev_gray     = None
-    motion_mode   = True  # 움직임 자동 녹화 기본 켜짐
+    writer          = None
+    filepath        = None
+    recording       = False
+    prev_gray       = None
+    motion_mode     = True
+    last_motion_time = None
+    MOTION_COOLDOWN  = 5  # 마지막 움직임 후 이 초만큼 더 녹화
 
     print("프리뷰 실행 중 | R: 수동 녹화  S: 수동 중단  M: 움직임 감지 토글  Q: 종료")
 
@@ -135,15 +137,18 @@ def preview_mode(camera_index: int, save_folder: Path):
 
         # 움직임에 따른 자동 녹화 제어 (motion_mode 켜진 경우만)
         if motion_mode:
-            if motion and not recording:
-                writer, filepath = make_writer(save_folder, cap)
-                recording = True
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] 움직임 감지 → 녹화 시작")
-            elif not motion and recording:
+            if motion:
+                last_motion_time = time.time()
+                if not recording:
+                    writer, filepath = make_writer(save_folder, cap)
+                    recording = True
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] 움직임 감지 → 녹화 시작")
+            elif recording and last_motion_time and time.time() - last_motion_time > MOTION_COOLDOWN:
                 writer.release()
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] 움직임 없음 → 녹화 중단: {filepath}")
                 writer = None
                 recording = False
+                last_motion_time = None
 
         if recording and writer:
             writer.write(frame)
